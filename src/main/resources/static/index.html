@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>加载字体文件，保存到数据库</title>
+</head>
+<style>
+    .box{
+        font-family: SimSun-ExtB,serif; /*这里我们先定义好使用的字体*/
+    }
+
+    .item {
+        display: flex;
+        border-bottom: 1px solid #000000;
+        justify-content: space-between;
+        width: 100%;
+        line-height: 50px;
+        height: 50px;
+    }
+
+    .item span:nth-child(2){
+        margin-right: 10px;
+        margin-top: 15px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #55ff00;
+    }
+    .nowI{
+        background: #ff0000 !important;
+    }
+</style>
+
+<body style="z-index: -100;">
+<!--<body style="background-image: url('img/2.png');z-index: -100;">-->
+<div id="app">
+    <div v-for="item in list" class="item">
+        <span>{{item.id}}.{{item.name}}</span>
+        <span :class='item.state==-1?"nowI":""'></span>
+    </div>
+
+    <div>
+        <input id="in" width="200px" value="" type="file">
+        <button id="getUrl" onclick="getUrl()">alert</button>
+        <label id="out">企业经营管理六大法则</label>
+        <p>央视网消息（新闻联播）：中国制造业采购经理指数重回扩张区间中国物流与采购联合会、国家统计局今天（9月30日）公布，9月份中国制造业采购经理指数为50.1%，比上月上升0.7个百分点，重回扩张区间。<br>生产经营活动预期指数为53.4%，高于上月1.1个百分点，制造业企业信心有所回升。国务院安委会综合督导检查组进驻各地开展工作国务院安委会近日派出16个综合督导检查组对北京、辽宁、浙江、新疆等地开展安全生产大检查“回头看”。
+            截至目前已抽查检查和明查暗访331家企业单位，发现问题隐患1400多项，要求各地方和企业对发现的问题隐患立查立改，坚决遏制重特大事故发生。总台专题片《解码十年》多语种版本发布中央广播电视总台<br>专题片《解码十年》多语种版本今天（9月30日）发布。13集系列报道《解码十年》自8月9日在《新闻联播》播出后，引发热烈反响。
+            在此基础上，总台特别制作推出该片的英、西、法、阿、俄等多语种外语版本，以及粤语、闽南话等汉语方言版本，与海内外友人共睹非凡十年的中国成就，向世界讲述新时代中国的奋进故事。</p>
+<!--        <img src="https://f10.baidu.com/it/u=3924476926,1161442220&fm=3004&app=3004&size=w560&q=100&n=0&f=PNG&fmt=auto?sec=1652461200&t=eeadb377fc9d40fa008970f86ed3b61e" alt=""/>-->
+    </div>
+</div>
+</body>
+<script src="js/jquery-2.1.1.min.js"></script>
+<script src="js/vue.min.js"></script>
+<!--<script src="js/indexedDB.js"></script>-->
+<script src="js/utils.js"></script>
+
+<script src="js/IndexedDB/IndexedDB.js"></script>
+<script src="js/IndexedDB/dbClass.js"></script>
+<script type="text/javascript">
+
+
+    var webSocket = null;
+    if ('WebSocket' in window) {
+        //创建WebSocket对象
+        webSocket = new WebSocket("ws://192.168.5.113:80/webSocket/" + getUUID());
+
+        //连接成功
+        webSocket.onopen = function() {
+            console.log("已连接");
+            webSocket.send("消息发送测试")
+        };
+        //接收到消息
+        webSocket.onmessage = function(msg) {
+            //处理消息
+            var serverMsg = msg.data;
+            console.log(serverMsg);
+            // Download(serverMsg, "git常用指令.doc");
+
+/*            var blob = new Blob([serverMsg]);
+            var file = blobToFile(blob);
+            var url = getObjectURL(file);
+            console.log(url);
+            loadFonts(url);*/
+            // Download(url, "sysfFS.woff")
+
+            // let file = base64toFile("data:application/octet-stream;" + serverMsg);
+            // let url = getObjectURL(file);
+            // loadFont(url);
+
+/*            var result = ev.data;
+            var flagReader = new FileReader();
+            flagReader.readAsArrayBuffer(result);
+            flagReader.onload = function () {
+                var imageReader = new FileReader();
+                imageReader.readAsDataURL(result);
+                console.info("服务器返回的数据大小:", result.size);
+                imageReader.onload = function (img) {
+                    var imgHtml = "<img src='" + img.target.result + "' style='width: 100px;height: 100px;'>";
+                    inpMsg.innerHTML += imgHtml.replace("data:application/octet-stream;", "data:image/png;") + "<br />";
+                    inpMsg.scroll(inpMsg.scrollWidth,inpMsg.scrollHeight);
+                };
+            }*/
+
+
+/*            let file = base64toFile(serverMsg);
+            let url = getObjectURL(file);
+            loadFont(url);
+
+            document.getElementsByTagName("img")[0].src = "data:application/octet-stream;base64," + serverMsg;
+            var myFonts = new FontFace('myFont', "url(data:font/woff;charset=utf-8;base64," + serverMsg + ")",{display: 'swap'});
+            myFonts.load().then(function(loadFace){
+                document.fonts.add(loadFace);
+            });*/
+        };
+
+        //关闭事件
+        webSocket.onclose = function() {
+            console.log("websocket已关闭");
+        };
+        //发生了错误事件
+        webSocket.onerror = function() {
+            console.log("websocket发生了错误");
+        }
+    } else {
+        alert("很遗憾，您的浏览器不支持WebSocket！")
+    }
+
+
+    function loadFonts(urls) {
+        var myFonts = new FontFace('myFont', "url(" + urls + ")",{display: 'swap'});
+        myFonts.load().then(function(loadFace){
+            document.fonts.add(loadFace);
+            // 给body设置字体样式 Arial为后补字体
+            document.body.style.fontFamily = 'myFont, Arial';
+            //或者单独给元素设置
+            var box = document.getElementsByClassName("box");
+            for (var i = 0; i < box.length; i++) {
+                box[i].style.fontFamily = "myFont, Arial";
+            }
+        });
+    }
+
+    function Download(content, filename) {
+        var eleLink = document.createElement('a');
+        eleLink.download = filename;
+        eleLink.style.display = 'none';
+        // 字符内容转变成blob地址
+        var blob = new Blob([content]);
+        eleLink.href = URL.createObjectURL(blob);
+        // 触发点击
+        document.body.appendChild(eleLink);
+        eleLink.click();
+        // 然后移除
+        document.body.removeChild(eleLink);
+    };
+
+
+    // 发送图片
+/*    document.querySelector('#send-pic').addEventListener('change', function () {
+        var files = this.files;
+        if (files && files.length) {
+            var file = files[0];
+            var fileReader = new FileReader();
+            fileReader.readAsArrayBuffer(file);
+            fileReader.onload = function (e) {
+                // 获取到文件对象
+                var result = e.target.result;
+                // 发送数据到服务器端
+                ws.send(result)
+            }
+        }
+    }, false);*/
+
+    // var db;
+    // 页面加载完以后加载字体文件
+    window.onload = function(){
+        /*document.getElementById("in").addEventListener("keyup", function (e) {
+            console.log(e);
+            document.getElementById("out").innerText =  document.getElementById("out").innerText + $("#in").val();
+        })*/
+        // justifyIndexDEB();        //判断是否支持indexedDB执行下面函数
+        /*var dbName = 'helloIndexDB', version = 1, storeName = 'helloStore', db;
+        let request = openDb(dbName, storeName, version);
+
+        request.onsuccess = request.onsuccess = function(event) {
+            db = event.target.result; // 数据库对象
+            console.log('数据库打开成功')
+            //TODO
+            let transaction = db.transaction([storeName]) // 事务
+            let objectStore = transaction.objectStore(storeName) // 仓库对象
+            let requestGet = objectStore.get(19)
+
+            requestGet.onerror = function(event) {
+                console.log('事务失败')
+            }
+
+            requestGet.onsuccess = function(event) {
+                console.log('主键查询结果: ', requestGet.result)
+                let dataByKey = requestGet.result;
+                var data = "";
+                if (dataByKey == "" || dataByKey == null || dataByKey == undefined){
+                    var oReq = new XMLHttpRequest();
+                    oReq.open("GET", "/open/socket/jumos", true);
+                    oReq.responseType = "blob";
+                    oReq.onload = function(oEvent) {
+                        var blob = oReq.response;
+                        blobToDataURI(blob, function (e) {
+                            addData(db, storeName, {id: 19, name: e});
+                            data = e;
+                            console.log("请求二进制")
+                            return e;
+                        });
+                    };
+                    oReq.send();
+                }
+                if (data == ""){
+                    data = dataByKey.name;
+                }
+                let file = base64toFile(data);
+                let url = getObjectURL(file);
+                loadFont(url);
+                closeDB(db);
+            };
+        };
+
+        request.onerror = function(event) {
+            console.log('数据库打开报错')
+        };
+
+        request.onupgradeneeded = function(event) {
+            // 数据库创建或升级的时候会触发
+            console.log('onupgradeneeded');
+            db = event.target.result; // 数据库对象
+            let objectStore;
+            if (!db.objectStoreNames.contains(storeName)) {
+                objectStore = db.createObjectStore(storeName, { keyPath: 'id' }) // 创建表
+                // objectStore.createIndex('name', 'name', { unique: true }) // 创建索引 可以让你搜索任意字段
+            }
+        };*/
+
+        let db = new DB('web_DB', 'nav_text');
+        // let da = {name:'管理员', roleId: 1, type: 1};
+
+
+/*        var content = "这是直接使用HTML5进行导出的";
+        var blob = new Blob([content], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, "file.txt");//saveAs(blob,filename)*/
+        var data = "";
+        db.get('woffsimfangsimhei1').then((res)=>{
+            console.log(res,'查询成功');
+            debugger
+            data = res.data;
+            if (data != ""){
+                let file = base64toFile(data);
+                let url = getObjectURL(file);
+                console.log("db:" + url);
+                loadFont(url);
+                setTimeout("reset()", 500 )
+
+            }else {
+                var oReq = new XMLHttpRequest();
+                oReq.open("GET", "/open/socket/jumos", true);
+                oReq.responseType = "blob";
+                oReq.onload = function(oEvent) {
+                    var blob = oReq.response;
+                    blobToDataURI(blob, function (e) {
+                        // addData(db, storeName, {id: 19, name: e});
+                        data = e;
+                        let file = base64toFile(data);
+                        let url = getObjectURL(file);
+                        console.log(url)
+                        db.save('woffsimfangsimhei1',data).then((res)=>{
+                            console.log(res,'存储成功')
+                        })
+                        loadFont(url);
+                        console.log("请求二进制");
+                        return e;
+                    });
+                };
+                oReq.send();
+
+            }
+        })
+
+
+    };
+
+    function reset() {
+        var vm = new Vue({
+            el: "#app",
+            data: {
+                list: [{
+                    id: 1,
+                    name: '经营对外，管理对内。经营更多是拿项目、找业务、搭资本、搞关系、处政商。',
+                    state: 1
+                },
+                    {
+                        id: 2,
+                        name: '经营讲开拓，管理在维持。经营必须面向未来，一定是基于长远布局考虑的。',
+                        state: 1
+                    },
+                    {
+                        id: 3,
+                        name: '经营在先，管理在后。企业经营弱，管理强，那就是本末倒置。',
+                        state: 1
+                    },
+                    {
+                        id: 4,
+                        name: '经营为主，管理为辅，管理是为经营服务的。任何企业管理的高度不应该超越它的经营高度',
+                        state: 1
+                    },
+                    {
+                        id: 5,
+                        name: '经营面向客户，管理面向人才。经营的本质就是开发并留住顾客，不断拓展企业的生存及发展空间，',
+                        state: 1
+                    },
+                    {
+                        id: 6,
+                        name: '经营寻求灵活，管理寻求稳健。企业面对的是多变的外部环境',
+                        state: 1
+                    }
+                ]
+            }
+        });
+    }
+
+    function getUrl(){
+        let element = document.getElementById("in").files[0];
+        let url = getObjectURL(element);
+        var myFonts = new FontFace('myFont', "url(" + url + ")",{display: 'swap'});
+        // var myFonts = new FontFace('myFont', "url(data:application/octet-stream;charset=utf-8;base64," + request.result.name + ")",{display: 'swap'});
+        myFonts.load().then(function(loadFace){
+            document.fonts.add(loadFace);
+            // 给body设置字体样式 Arial为后补字体
+            document.body.style.fontFamily = 'myFont, Arial';
+            //或者单独给元素设置
+            var box = document.getElementsByClassName("box");
+            for (var i = 0; i < box.length; i++) {
+                box[i].style.fontFamily = "myFont, Arial";
+            }
+        });
+
+    }
+
+    function saveAs(blob,fileName) {
+        if ('download' in document.createElement('a')) { // 不是IE浏览器
+            let url = window.URL.createObjectURL(blob)
+            let link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', fileName)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link) // 下载完成移除元素
+            window.URL.revokeObjectURL(url) // 释放掉blob对象
+        } else { // IE 10+
+            window.navigator.msSaveBlob(blob, fileName)
+        }
+    }
+
+
+
+</script>
+</html>

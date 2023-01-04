@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>加载字体文件，保存到数据库</title>
+</head>
+<style>
+    .box{
+        font-family: SimSun-ExtB,serif; /*这里我们先定义好使用的字体*/
+    }
+
+    .item {
+        display: flex;
+        border-bottom: 1px solid #000000;
+        justify-content: space-between;
+        width: 30%;
+        line-height: 50px;
+        height: 50px;
+    }
+
+    .item span:nth-child(2){
+        margin-right: 10px;
+        margin-top: 15px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #55ff00;
+    }
+    .nowI{
+        background: #ff0000 !important;
+    }
+</style>
+<script src="js/jquery-2.1.1.min.js"></script>
+<body style="background-image: url('img/2.png');z-index: -100;">
+<div id="app">
+    <div v-for="item in list" class="item">
+        <span>{{item.id}}.{{item.name}}</span>
+        <span :class='item.state==-1?"nowI":""'></span>
+    </div>
+
+    <div>
+        <input id="in" width="200px" value="" type="file">
+        <button id="getUrl" onclick="getUrl()">alert</button>
+        <label id="out">啊啊啊啊啊啊啊啊啊啊啊</label>
+        <img src="https://f10.baidu.com/it/u=3924476926,1161442220&fm=3004&app=3004&size=w560&q=100&n=0&f=PNG&fmt=auto?sec=1652461200&t=eeadb377fc9d40fa008970f86ed3b61e" alt=""/>
+    </div>
+</div>
+</body>
+<script src="js/vue.min.js"></script>
+<script src="js/indexedDB.js"></script>
+<script src="js/utils.js"></script>
+<script type="text/javascript">
+
+    var vm = new Vue({
+        el: "#app",
+        data: {
+            list: [{
+                id: 1,
+                name: '张三韩梅梅韩李四梅韩梅李四梅',
+                state: 1
+            },
+                {
+                    id: 2,
+                    name: '李四',
+                    state: 1
+                },
+                {
+                    id: 3,
+                    name: '王五',
+                    state: 1
+                },
+                {
+                    id: 4,
+                    name: '韩梅梅',
+                    state: 1
+                },
+                {
+                    id: 5,
+                    name: '李磊',
+                    state: 1
+                }
+            ]
+        }
+    });
+
+    var webSocket = null;
+    if ('WebSocket' in window) {
+        //创建WebSocket对象
+        webSocket = new WebSocket("ws://localhost:8888/webSocket/" + getUUID());
+
+        //连接成功
+        webSocket.onopen = function() {
+            console.log("已连接");
+            webSocket.send("消息发送测试")
+        }
+        //接收到消息
+        webSocket.onmessage = function(msg) {
+            //处理消息
+            var serverMsg = msg.data;
+            console.log(serverMsg);
+            document.getElementsByTagName("img")[0].src = "data:application/octet-stream;base64," + serverMsg;
+            /* var myFonts = new FontFace('myFont', "url(data:font/woff;charset=utf-8;base64," + serverMsg + ")",{display: 'swap'});
+             myFonts.load().then(function(loadFace){
+                 document.fonts.add(loadFace);
+             });*/
+            /*var t_id = parseInt(serverMsg) //服务端发过来的消息，ID，string需转化为int类型才能比较
+            for (var i = 0; i < vm.list.length; i++) {
+                var item = vm.list[i];
+                if(item.id == t_id){
+                    item.state = -1;
+                    vm.list.splice(i,1,item)
+                    break;
+                }
+            }*/
+        };
+
+        //关闭事件
+        webSocket.onclose = function() {
+            console.log("websocket已关闭");
+        };
+        //发生了错误事件
+        webSocket.onerror = function() {
+            console.log("websocket发生了错误");
+        }
+    } else {
+        alert("很遗憾，您的浏览器不支持WebSocket！")
+    }
+
+    // var db;
+    // 页面加载完以后加载字体文件
+    window.onload = function(){
+        document.getElementById("in").addEventListener("keyup", function (e) {
+            console.log(e);
+            document.getElementById("out").innerText =  document.getElementById("out").innerText + $("#in").val();
+        })
+        justifyIndexDEB();        //判断是否支持indexedDB执行下面函数
+        var dbName = 'helloIndexDB', version = 1, storeName = 'helloStore', db;
+        let request = openDb(dbName, storeName, version);
+
+        request.onsuccess = request.onsuccess = function(event) {
+            db = event.target.result; // 数据库对象
+            console.log('数据库打开成功')
+            //TODO
+            let transaction = db.transaction([storeName]) // 事务
+            let objectStore = transaction.objectStore(storeName) // 仓库对象
+            let requestGet = objectStore.get(19)
+
+            requestGet.onerror = function(event) {
+                console.log('事务失败')
+            }
+
+            requestGet.onsuccess = function(event) {
+                console.log('主键查询结果: ', requestGet.result)
+                let dataByKey = requestGet.result;
+                var data = "";
+                if (dataByKey == "" || dataByKey == null || dataByKey == undefined){
+                    var oReq = new XMLHttpRequest();
+                    oReq.open("GET", "/open/socket/jumos", true);
+                    oReq.responseType = "blob";
+                    oReq.onload = function(oEvent) {
+                        var blob = oReq.response;
+                        blobToDataURI(blob, function (e) {
+                            addData(db, storeName, {id: 19, name: e});
+                            data = e;
+                            console.log("请求二进制")
+                            return e;
+                        });
+                    };
+                    oReq.send();
+                }
+                if (data == ""){
+                    data = dataByKey.name;
+                }
+                let file = base64toFile(data);
+                let url = getObjectURL(file);
+                loadFont(url);
+                closeDB(db);
+            };
+        };
+
+        request.onerror = function(event) {
+            console.log('数据库打开报错')
+        };
+
+        request.onupgradeneeded = function(event) {
+            // 数据库创建或升级的时候会触发
+            console.log('onupgradeneeded');
+            db = event.target.result; // 数据库对象
+            let objectStore;
+            if (!db.objectStoreNames.contains(storeName)) {
+                objectStore = db.createObjectStore(storeName, { keyPath: 'id' }) // 创建表
+                // objectStore.createIndex('name', 'name', { unique: true }) // 创建索引 可以让你搜索任意字段
+            }
+        };
+    }
+
+    function getUrl(){
+        let element = document.getElementById("in").files[0];
+        let url = getObjectURL(element);
+        var myFonts = new FontFace('myFont', "url(" + url + ")",{display: 'swap'});
+        // var myFonts = new FontFace('myFont', "url(data:application/octet-stream;charset=utf-8;base64," + request.result.name + ")",{display: 'swap'});
+        myFonts.load().then(function(loadFace){
+            document.fonts.add(loadFace);
+            // 给body设置字体样式 Arial为后补字体
+            document.body.style.fontFamily = 'myFont, Arial';
+            //或者单独给元素设置
+            var box = document.getElementsByClassName("box");
+            for (var i = 0; i < box.length; i++) {
+                box[i].style.fontFamily = "myFont, Arial";
+            }
+        });
+
+    }
+
+
+</script>
+</html>

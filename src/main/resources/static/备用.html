@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>实时监控</title>
+</head>
+<style>
+    .box{
+        font-family: SimSun-ExtB,serif; /*这里我们先定义好使用的字体*/
+    }
+
+    .item {
+        display: flex;
+        border-bottom: 1px solid #000000;
+        justify-content: space-between;
+        width: 30%;
+        line-height: 50px;
+        height: 50px;
+    }
+
+    .item span:nth-child(2){
+        margin-right: 10px;
+        margin-top: 15px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #55ff00;
+    }
+    .nowI{
+        background: #ff0000 !important;
+    }
+</style>
+<script src="js/jquery-2.1.1.min.js"></script>
+<body>
+<div id="app">
+    <div v-for="item in list" class="item">
+        <span>{{item.id}}.{{item.name}}</span>
+        <span :class='item.state==-1?"nowI":""'></span>
+    </div>
+
+    <div>
+        <input id="in" width="200px" value="" type="file">
+        <button id="getUrl" onclick="getUrl()">alert</button>
+        <label id="out">啊啊啊啊啊啊啊啊啊啊啊</label>
+        <img src="https://f10.baidu.com/it/u=3924476926,1161442220&fm=3004&app=3004&size=w560&q=100&n=0&f=PNG&fmt=auto?sec=1652461200&t=eeadb377fc9d40fa008970f86ed3b61e" alt=""/>
+    </div>
+</div>
+</body>
+<script src="js/vue.min.js"></script>
+<script src="js/indexedDB.js"></script>
+<script src="js/utils.js"></script>
+<script type="text/javascript">
+
+    var vm = new Vue({
+        el: "#app",
+        data: {
+            list: [{
+                id: 1,
+                name: '张三韩梅梅韩李四梅韩梅李四梅',
+                state: 1
+            },
+                {
+                    id: 2,
+                    name: '李四',
+                    state: 1
+                },
+                {
+                    id: 3,
+                    name: '王五',
+                    state: 1
+                },
+                {
+                    id: 4,
+                    name: '韩梅梅',
+                    state: 1
+                },
+                {
+                    id: 5,
+                    name: '李磊',
+                    state: 1
+                }
+            ]
+        }
+    });
+
+    var webSocket = null;
+    if ('WebSocket' in window) {
+        //创建WebSocket对象
+        webSocket = new WebSocket("ws://localhost:8888/webSocket/" + getUUID());
+
+        //连接成功
+        webSocket.onopen = function() {
+            console.log("已连接");
+            webSocket.send("消息发送测试")
+        }
+        //接收到消息
+        webSocket.onmessage = function(msg) {
+            //处理消息
+            var serverMsg = msg.data;
+            console.log(serverMsg);
+            document.getElementsByTagName("img")[0].src = "data:application/octet-stream;base64," + serverMsg;
+            /* var myFonts = new FontFace('myFont', "url(data:font/woff;charset=utf-8;base64," + serverMsg + ")",{display: 'swap'});
+             myFonts.load().then(function(loadFace){
+                 document.fonts.add(loadFace);
+             });*/
+            /*var t_id = parseInt(serverMsg) //服务端发过来的消息，ID，string需转化为int类型才能比较
+            for (var i = 0; i < vm.list.length; i++) {
+                var item = vm.list[i];
+                if(item.id == t_id){
+                    item.state = -1;
+                    vm.list.splice(i,1,item)
+                    break;
+                }
+            }*/
+        };
+
+        //关闭事件
+        webSocket.onclose = function() {
+            console.log("websocket已关闭");
+        };
+        //发生了错误事件
+        webSocket.onerror = function() {
+            console.log("websocket发生了错误");
+        }
+    } else {
+        alert("很遗憾，您的浏览器不支持WebSocket！")
+    }
+
+    function getUUID() { //获取唯一的UUID
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0,
+                v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    var db;
+    // 页面加载完以后加载字体文件
+    window.onload = function(){
+        document.getElementById("in").addEventListener("keyup", function (e) {
+            console.log(e);
+            document.getElementById("out").innerText =  document.getElementById("out").innerText + $("#in").val();
+        })
+        justifyIndexDEB();        //判断是否支持indexedDB执行下面函数
+        let dbName = 'helloIndexDB', version = 1, storeName = 'helloStore';
+        let indexedDB = window.indexedDB;
+        const request = indexedDB.open(dbName, version);
+        request.onsuccess = function(event) {
+            db = event.target.result; // 数据库对象
+            console.log('数据库打开成功');
+
+            let transaction = db.transaction([storeName]); // 事务
+            let objectStore = transaction.objectStore(storeName); // 仓库对象
+            let request = objectStore.get(3);
+
+            request.onerror = function(event) {
+                console.log('事务失败')
+            }
+
+            request.onsuccess = function(event) {
+                getUrl()
+                /* console.log('主键查询结果: ', request.result)
+                 // var myFonts = new FontFace('myFont', "url(data:font/woff;charset=utf-8;base64," + request.result.name,{display: 'swap'});
+                 var myFonts = new FontFace('myFont', "url(data:application/octet-stream;charset=utf-8;base64," + request.result.name,{display: 'swap'});
+                 myFonts.load().then(function(loadFace){
+                     document.fonts.add(loadFace);
+                     // 给body设置字体样式 Arial为后补字体
+                     document.body.style.fontFamily = 'myFont, Arial';
+                     //或者单独给元素设置
+                     var box = document.getElementsByClassName("box");
+                     for (var i = 0; i < box.length; i++) {
+                         box[i].style.fontFamily = "myFont, Arial";
+                     }
+                 });*/
+            };
+        };
+
+        request.onerror = function(event) {
+            console.log('数据库打开报错')
+        };
+
+        request.onupgradeneeded = function(event) {
+            // 数据库创建或升级的时候会触发
+            console.log('onupgradeneeded');
+            db = event.target.result; // 数据库对象
+            let objectStore;
+            if (!db.objectStoreNames.contains(storeName)) {
+                objectStore = db.createObjectStore(storeName, { keyPath: 'id' }) // 创建表
+                // objectStore.createIndex('name', 'name', { unique: true }) // 创建索引 可以让你搜索任意字段
+            }
+        }
+        /*$.ajax({
+            url: 'http://localhost:8888/open/socket/jumo',
+            type: 'GET',
+            async: false,
+            success: function (data) {
+                let blob = base64toFile(data);
+                console.log(blob)
+                addData(db, storeName, {id: 11, name: blob})
+                let transaction = db.transaction([storeName]) // 事务
+                let objectStore = transaction.objectStore(storeName) // 仓库对象
+                let request = objectStore.get(11)
+                request.onerror = function(event) {
+                    console.log('事务失败')
+                }
+
+                request.onsuccess = function(event) {
+                    console.log('主键查询结果: ', request.result)
+                    // let file = base64toFile(request.result.name, "font");
+                    // let dataURLtoBlob1 = dataURLtoBlob(request.result.name);
+                    let file = blobToFile(request.result.name, "font");
+                    let url = getObjectURL(file);
+                    alert(url)
+                    // var myFonts = new FontFace('myFont', "url(data:font/woff;charset=utf-8;base64," + request.result.name,{display: 'swap'});
+                    // var myFonts = new FontFace('myFont', "url(" + url + ")",{display: 'swap'});
+                    var myFonts = new FontFace('myFont', "url(data:application/octet-stream;charset=utf-8;base64," + request.result.name + ")",{display: 'swap'});
+                    myFonts.load().then(function(loadFace){
+                        document.fonts.add(loadFace);
+                        // 给body设置字体样式 Arial为后补字体
+                        document.body.style.fontFamily = 'myFont, Arial';
+                        //或者单独给元素设置
+                        var box = document.getElementsByClassName("box");
+                        for (var i = 0; i < box.length; i++) {
+                            box[i].style.fontFamily = "myFont, Arial";
+                        }
+                    });
+                };
+                // let dataByKey = getDataByKey(db, storeName, 3);
+                /!*var myFonts = new FontFace('myFont', "url(data:font/woff;charset=utf-8;base64," + request.result.name,{display: 'swap'});
+                myFonts.load().then(function(loadFace){
+                    document.fonts.add(loadFace);
+                    // 给body设置字体样式 Arial为后补字体
+                    document.body.style.fontFamily = 'myFont, Arial';
+                    //或者单独给元素设置
+                    var box = document.getElementsByClassName("box");
+                    for (var i = 0; i < box.length; i++) {
+                        box[i].style.fontFamily = "myFont, Arial";
+                    }
+                });*!/
+            }
+        });
+*/
+    }
+
+    // 添加数据
+    /*    function addData(db, storeName, data) {
+            let request = db.transaction([storeName], 'readwrite') // 事务对象 指定表格名称和操作模式（"只读"或"读写"）
+                .objectStore(storeName) // 仓库对象
+                .add(data)
+
+            request.onsuccess = function(event) {
+                console.log('数据写入成功')
+            }
+
+            request.onerror = function(event) {
+                console.log('数据写入失败')
+                throw new Error(event.target.error)
+            }
+        }
+
+        // 根据id获取数据
+        function getDataByKey(db, storeName, key) {
+            let transaction = db.transaction([storeName]) // 事务
+            let objectStore = transaction.objectStore(storeName) // 仓库对象
+            let request = objectStore.get(key)
+
+            request.onerror = function(event) {
+                console.log('事务失败')
+            }
+
+            request.onsuccess = function(event) {
+                console.log('主键查询结果: ', request.result)
+            };
+            return request.result.name;
+        }
+
+
+        // 根据id修改数
+        function updateDB(db, storeName, data) {
+            let request = db.transaction([storeName], 'readwrite') // 事务对象
+                .objectStore(storeName) // 仓库对象
+                .put(data)
+
+            request.onsuccess = function() {
+                console.log('数据更新成功')
+            }
+
+            request.onerror = function() {
+                console.log('数据更新失败')
+            }
+        }
+
+        // 根据id删除数据
+        function deleteDB(db, storeName, id) {
+            let request = db.transaction([storeName], 'readwrite').objectStore(storeName).delete(id)
+
+            request.onsuccess = function() {
+                console.log('数据删除成功')
+            }
+
+            request.onerror = function() {
+                console.log('数据删除失败')
+            }
+        }*/
+
+    function justifyIndexDEB(){
+        if("indexedDB" in window) {
+            // 支持
+            console.log(" 支持indexedDB...");
+        } else {
+            // 不支持
+            console.log("不支持indexedDB...");
+        }
+    }
+
+    function getUrl() {
+        let transaction = db.transaction(["helloStore"]) // 事务
+        let objectStore = transaction.objectStore("helloStore") // 仓库对象
+        let request = objectStore.get(15)
+        request.onerror = function(event) {
+            console.log('事务失败')
+        }
+
+        request.onsuccess = function(event) {
+            console.log('主键查询结果: ', request.result)
+            let ltoBlob = dataURLtoBlob(request.result.name);
+            let file = blobToFile(ltoBlob);
+            let urls = getObjectURL(file);
+            // alert(urls)
+            // console.log(urls)
+            var myFonts = new FontFace('myFont', "url(" + urls + ")",{display: 'swap'});
+            // var myFonts = new FontFace('myFont', "url(" + dataByKey.name + ")",{display: 'swap'});
+            myFonts.load().then(function(loadFace){
+                document.fonts.add(loadFace);
+                // 给body设置字体样式 Arial为后补字体
+                document.body.style.fontFamily = 'myFont, Arial';
+                //或者单独给元素设置
+                var box = document.getElementsByClassName("box");
+                for (var i = 0; i < box.length; i++) {
+                    box[i].style.fontFamily = "myFont, Arial";
+                }
+            });
+        };
+        /*        var oReq = new XMLHttpRequest();
+                oReq.open("GET", "/open/socket/jumos", true);
+                oReq.responseType = "blob";
+                oReq.onload = function(oEvent) {
+                    var blob = oReq.response;
+                    console.log(blob)
+                    let toFile = blobToFile(blob);
+                    blobToDataURI(blob, function (e) {
+                        console.log(e)
+                        // addData(db, "helloStore", {id: 15, name: e})
+                        return e;
+                    });
+
+                    let url = getObjectURL(toFile);
+                    alert(url)
+                    // let dataByKey = getDataByKey(db, "helloStore", 15);
+                    let transaction = db.transaction(["helloStore"]) // 事务
+                    let objectStore = transaction.objectStore("helloStore") // 仓库对象
+                    let request = objectStore.get(15)
+                    request.onerror = function(event) {
+                        console.log('事务失败')
+                    }
+
+                    request.onsuccess = function(event) {
+                        debugger
+                        console.log('主键查询结果: ', request.result)
+                        let ltoBlob = dataURLtoBlob(request.result.name);
+                        let file = blobToFile(ltoBlob);
+                        let urls = getObjectURL(file);
+                        alert(urls)
+                        var myFonts = new FontFace('myFont', "url(" + urls + ")",{display: 'swap'});
+                        // var myFonts = new FontFace('myFont', "url(" + dataByKey.name + ")",{display: 'swap'});
+                        myFonts.load().then(function(loadFace){
+                            document.fonts.add(loadFace);
+                            // 给body设置字体样式 Arial为后补字体
+                            document.body.style.fontFamily = 'myFont, Arial';
+                            //或者单独给元素设置
+                            var box = document.getElementsByClassName("box");
+                            for (var i = 0; i < box.length; i++) {
+                                box[i].style.fontFamily = "myFont, Arial";
+                            }
+                        });
+                    };
+                };
+                oReq.send();*/
+        /*        let element = document.getElementById("in").files[0];
+                // base64ToFile(, element.name)
+                let url = getObjectURL(element);
+                alert(url)
+                var myFonts = new FontFace('myFont', "url(" + url + ")",{display: 'swap'});
+                // var myFonts = new FontFace('myFont', "url(data:application/octet-stream;charset=utf-8;base64," + request.result.name + ")",{display: 'swap'});
+                myFonts.load().then(function(loadFace){
+                    document.fonts.add(loadFace);
+                    // 给body设置字体样式 Arial为后补字体
+                    document.body.style.fontFamily = 'myFont, Arial';
+                    //或者单独给元素设置
+                    var box = document.getElementsByClassName("box");
+                    for (var i = 0; i < box.length; i++) {
+                        box[i].style.fontFamily = "myFont, Arial";
+                    }
+                });*/
+    }
+
+    /*    function base64toFile (dataurl, filename) {
+            let arr = dataurl.split(',')
+            let mime = arr[0].match(/:(.*?);/)[1]
+            let suffix = mime.split('/')[1]
+            let bstr = atob(arr[1])
+            let n = bstr.length
+            let u8arr = new Uint8Array(n)
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n)
+            }
+            return new File([u8arr], `${filename}.${suffix}`, {
+                type: mime
+            })
+        }
+
+        function getObjectURL(file) {
+            var url = null ;
+            if (window.createObjectURL!=undefined) {
+                url = window.createObjectURL(file) ;
+            } else if (window.URL!=undefined) {
+                url = window.URL.createObjectURL(file) ;
+            } else if (window.webkitURL!=undefined) {
+                url = window.webkitURL.createObjectURL(file) ;
+            }
+            return url ;
+        }
+
+        //将base64转换为blob
+        function dataURLtoBlob(dataurl) {
+            var arr = dataurl.split(','),
+                mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]),
+                n = bstr.length,
+                u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        //将blob转换为file
+        function blobToFile(theBlob, fileName){
+            theBlob.lastModifiedDate = new Date();
+            theBlob.name = fileName;
+            return theBlob;
+        }
+
+        /!**
+         *
+         * blob二进制 to base64
+         **!/
+        function blobToDataURI(blob, callback) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                callback(e.target.result);
+            }
+            reader.readAsDataURL(blob);
+        }*/
+
+</script>
+</html>
